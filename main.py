@@ -1,6 +1,6 @@
 
 class Address:
-    def __init__(self, name, v0=50):
+    def __init__(self, name):
         self.name = name
         self.status = "inactive"
         self.balance = 0  # token balance
@@ -11,13 +11,22 @@ class Address:
     def isActive(self):
         return self.status == "active"
 
+    def __repr__(self):
+        face_of = {
+            "active": "😁",
+            "inactive": "😴",
+            "used": "😥"
+        }
+
+        return f"{face_of[self.status]} {self.name}\t💵: {self.v}\t🍬: {self.balance}\t🎩: {self.cap}"
+
 
 class ICOContract:
-    def __init__(self, t, u):
+    def __init__(self, t, u, addresses):
         self.t = t  # withdrawal lock
         self.u = u
         self.s = 0
-        self.addresses = {}
+        self.addresses = addresses
 
     @property
     def inflation_ramp(self):
@@ -33,6 +42,8 @@ class ICOContract:
             p = 0.8 + 0.1 * (self.s / self.t)
         elif self.t < self.s <= self.u:
             p = 0.9 + 0.1 * ((self.s - self.t) / (self.u - self.t))
+        else:
+            p = 1
         return p
 
     @property
@@ -50,7 +61,8 @@ class ICOContract:
         self.automatic_withdrawal()
 
     def final_stage(self):
-        pass
+        for k, address in self.addresses.items():
+            print(address)
 
     def receive_bids(self, address_name, eth, personal_cap):
         # 1. Any “inactive” address A may send to the crowdfund smart
@@ -97,6 +109,11 @@ class ICOContract:
 
     def called_by_oracle(self):
         print("called by oracle")
+        if self.s < self.u:
+            self.automatic_withdrawal()
+        else:
+            self.final_stage()
+
         self.s += 1
 
     def __repr__(self):
@@ -110,18 +127,23 @@ class Script:
         self.u = 100
 
     def play(self):
-        while self.block_number <= 100:
+        while self.block_number <= 102:
 
             print("block number:", self.block_number)
 
             if self.block_number == 0:
-                contract = ICOContract(self.t, self.u)
+                init_addresses = {
+                    "Alice": Address("Alice"),
+                    "Bob": Address("Bob")
+                }
+                contract = ICOContract(self.t, self.u, init_addresses)
             elif self.block_number == int(self.t / 3):
-                pass
-            elif 1 <= self.block_number <= self.u:
+                contract.receive_bids("Alice", 30, 79)
+                contract.receive_bids("Bob", 30, 79)
+
+            elif 1 <= self.block_number:
                 contract.called_by_oracle()
                 print(contract)
-
             self.block_number += 1
 
 

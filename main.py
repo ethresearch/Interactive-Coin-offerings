@@ -91,7 +91,6 @@ class ICOContract(EthAccount):
 
     def final_stage(self):
         for k, address in self.addresses.items():
-            self.transfer(address.player, address.balance)
             print(address)
 
     def receive_bids(self, player, eth, personal_cap):

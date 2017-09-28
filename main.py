@@ -1,9 +1,11 @@
 
 class Address:
-    def __init__(self, name, cap=100, v0=50):
+    def __init__(self, name, v0=50):
         self.name = name
         self.status = "inactive"
-        self.balance = 0
+        self.balance = 0  # token balance
+        self.cap = 0
+        self.v = 0  # eth balance
 
     @property
     def isActive(self):
@@ -36,16 +38,15 @@ class ICOContract:
     @property
     def crowdsale_valuation(self):
         # V: crowdsale valuation at the present instant as follows.
-        active_address_values = [
-            address.v for address in self.addresses.values() if address.isActive]
+        active_address_values = [a.v for a in self.active_addresses]
         V = sum(active_address_values) if len(active_address_values) > 0 else 0
         return V
 
+    @property
+    def active_addresses(self):
+        return [address for address in self.addresses.values() if address.isActive]
+
     def main_loop(self):
-        if self.s <= self.u:
-            self.receive_bids()
-        if self.s < self.t:
-            self.voluntary_withdrawal()
         self.automatic_withdrawal()
 
     def final_stage(self):
@@ -60,16 +61,39 @@ class ICOContract:
         #   – sets the address balance b(A) = v(A) · p(s), effectively
         #     implementing the inflation ramp (Section 2), and
         #   – sets A’s status to “active.”
-        assert cap > self.crowdsale_valuation
+        assert personal_cap > self.crowdsale_valuation
 
+        self.addresses[address_name].cap = personal_cap
         self.addresses[address_name].balance = eth * self.inflation_ramp
         self.addresses[address_name].status = "active"
 
-    def voluntary_withdrawal(self):
-        pass
+    def voluntary_withdrawal(self, address_name):
+        # The following only applies prior to the withdrawal lock at time t.
+        # Any “active” address A may signal that it wishes to cancel its
+        # bid from any previous stage. Upon such signal, the crowdfund
+        # smart contract does the following:
+        # 1. refunds v(A) native tokens back to A, and
+        # 2. sets A’s status to “used.”
+        assert self.s <= self.u
+
+        self.addresses[address_name].balance = 0  # TODO: real refund
+        self.addresses[address_name].status = "used"
 
     def automatic_withdrawal(self):
-        pass
+        while any([self.crowdsale_valuation > a.cap for a in self.active_addresses]):
+            min_cap = min([a.cap for a in self.active_addresses])
+            Bs = [a for a in self.active_addresses if a.cap == min_cap]
+            S = sum([Bi.v for Bi in Bs])
+            if self.crowdsale_valuation - S >= min_cap:
+                # TODO:refunds v(Bi) to Bi for all i ≤ k, and
+                for address in Bs:
+                    address.status = "used"
+            else:
+                q = (self.crowdsale_valuation - min_cap) / S
+                # TODO: refunds q · v(Bi) to Bi
+                for address in Bs:
+                    address.balance *= (1 - q)
+                    address.v *= (1 - q)
 
     def called_by_oracle(self):
         print("called by oracle")

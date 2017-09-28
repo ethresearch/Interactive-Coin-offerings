@@ -1,17 +1,18 @@
 class EthAccount:
-    def __init__(self, eth_balance=0):
+    def __init__(self, name, eth_balance=0):
         self.eth_balance = eth_balance
+        self.name = name
 
     def transfer(self, to, eth):
         assert self.eth_balance >= eth
         self.eth_balance -= eth
         to.eth_balance += eth
+        print(f"➡️ {self.name}\t--->\t{to.name}\t{eth:.2f} ETH")
 
 
 class Player(EthAccount):
     def __init__(self, name, eth_balance):
-        super().__init__(eth_balance)
-        self.name = name
+        super().__init__(name, eth_balance)
         self.token_balance = 0
         print(f"Here borns {self.__repr__()}")
 
@@ -44,7 +45,7 @@ class ICOAddressData:
 
 class ICOContract(EthAccount):
     def __init__(self, t, u, block_number):
-        super().__init__()
+        super().__init__("Contract")
         self.deployed_at = block_number
         self.t = t + block_number  # withdrawal lock
         self.u = u + block_number
@@ -65,6 +66,7 @@ class ICOContract(EthAccount):
         # crowdsales today). The bonus decreases smoothly down to 10% at
         # the beginning of the withdrawal lock, and then disappears to nothing
         # by the end of the crowdsale.
+
         if self.s <= self.t:
             p = 0.8 + 0.1 * (self.s / self.t)
         elif self.t < self.s <= self.u:
@@ -89,6 +91,7 @@ class ICOContract(EthAccount):
 
     def final_stage(self):
         for k, address in self.addresses.items():
+            self.transfer(address.player, address.balance)
             print(address)
 
     def receive_bids(self, player, eth, personal_cap):
@@ -105,6 +108,7 @@ class ICOContract(EthAccount):
         address_name = player.name
 
         player.transfer(self, eth)
+        self.addresses[address_name].v = eth
         self.addresses[address_name].cap = personal_cap
         self.addresses[address_name].balance = eth * self.inflation_ramp
         self.addresses[address_name].status = "active"
@@ -123,16 +127,21 @@ class ICOContract(EthAccount):
 
     def automatic_withdrawal(self):
         while any([self.crowdsale_valuation > a.cap for a in self.active_addresses]):
+            print("⚠️ V > somebody's cap")
             min_cap = min([a.cap for a in self.active_addresses])
             Bs = [a for a in self.active_addresses if a.cap == min_cap]
+            print(f"{self.crowdsale_valuation: .2f} ETH raised,",
+                  f"but {', '.join([b.name for b in Bs])} want capped at {min_cap: .2f} ETH")
             S = sum([Bi.v for Bi in Bs])
             if self.crowdsale_valuation - S >= min_cap:
+                print("⚠️ V - S >= min_cap \tDo a full refund")
                 for address in Bs:
                     print(f"💸 Refund {address.name} {address.v} eth")
                     self.transfer(address.player, address.v)
                     address.v = 0
                     address.status = "used"
             else:
+                print("⚠️ V - S < min_cap \tDo a partial refund")
                 q = (self.crowdsale_valuation - min_cap) / S
                 for address in Bs:
                     refund = q * address.v
@@ -144,9 +153,9 @@ class ICOContract(EthAccount):
         if self.s < self.u:
             self.automatic_withdrawal()
         elif self.s == self.t:
-            print("!!!! t passed: withdrawal lock activated")
+            print("\n!!!! t passed: withdrawal lock activated\n")
         elif self.s == self.u:
-            print("!!!! u passed: token sales ended")
+            print("\n!!!! u passed: token sales ended\n")
             self.final_stage()
 
         self.s = block_number - self.deployed_at
@@ -170,18 +179,23 @@ class Chain:
         print(f"# {self.block_number}: 🆙 mined {blocks} blocks!")
 
 
-if __name__ == "__main__":
-
-    print("# case 1")
+def case_1():
     c = Chain()
     a = Player("Alice", 100)
     b = Player("Bob", 200)
+    d = Player("David", 200)
     contract = ICOContract(50, 100, c.block_number)
     contract.register(a)
     contract.register(b)
+    contract.register(d)
     c.contract = contract
     c.mine(10)
     contract.receive_bids(a, 30, 79)
     c.mine(20)
     contract.receive_bids(b, 30, 79)
+    contract.receive_bids(d, 20, 80)
     c.mine(100)
+
+
+if __name__ == "__main__":
+    case_1()

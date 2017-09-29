@@ -295,5 +295,5 @@ def case_whale_withdrawls():
 if __name__ == "__main__":
     # case_1()
     # case_2()
-    # case_big_whale()
-    case_whale_withdrawls()
+    case_big_whale()
+    # case_whale_withdrawls()

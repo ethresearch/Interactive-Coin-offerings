@@ -13,11 +13,10 @@ class EthAccount:
 class Player(EthAccount):
     def __init__(self, name, eth_balance):
         super().__init__(name, eth_balance)
-        self.token_balance = 0
         print(f"Here borns {self.__repr__()}")
 
     def __repr__(self):
-        return f"😁 {self.name}\tETH: {self.eth_balance:.2f}\tToken: {self.token_balance:.2f}"
+        return f"😁 {self.name}\tETH: {self.eth_balance:.2f}"
 
 
 class ICOAddressData:

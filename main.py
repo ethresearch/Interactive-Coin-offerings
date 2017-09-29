@@ -44,6 +44,9 @@ class ICOAddressData:
 
 
 class ICOContract(EthAccount):
+
+    TOKEN_PER_ETHER = 1.0
+
     def __init__(self, t, u, block_number):
         super().__init__("Contract")
         self.deployed_at = block_number
@@ -58,7 +61,7 @@ class ICOContract(EthAccount):
 
     @property
     def inflation_ramp(self):
-        # be a positive-valued, decreasing function
+        # p(s) be a positive-valued, decreasing function
         # representing the purchase power of a native token at stage s.
 
         # Inflation ramp: Buyers who purchase tokens early receive a discounted
@@ -68,12 +71,14 @@ class ICOContract(EthAccount):
         # by the end of the crowdsale.
 
         if self.s <= self.t:
-            p = 0.8 + 0.1 * (self.s / self.t)
+            discount = 0.2 - 0.1 * (self.s / self.t)
         elif self.t < self.s <= self.u:
-            p = 0.9 + 0.1 * ((self.s - self.t) / (self.u - self.t))
+            discount = 0.1 * ((self.u - self.s) / (self.u - self.t))
         else:
-            p = 1
-        return p
+            discount = 0
+        # How many token can be purchased with 1 ETH
+        purchasing_power = self.TOKEN_PER_ETHER / (1.0 - discount)
+        return purchasing_power
 
     @property
     def crowdsale_valuation(self):

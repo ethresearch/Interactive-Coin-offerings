@@ -200,5 +200,28 @@ def case_1():
     c.mine(100)
 
 
+def case_2():
+    c = Chain()
+    a = Player("Alice", 100)
+    b = Player("Bob", 200)
+    d = Player("David", 200)
+    e = Player("Ed", 200)
+    contract = ICOContract(50, 100, c.block_number)
+    contract.register(a)
+    contract.register(b)
+    contract.register(d)
+    contract.register(e)
+    c.contract = contract
+    c.mine(10)
+    contract.receive_bids(a, 30, 79)
+    c.mine(20)
+    contract.receive_bids(b, 30, 79)
+    contract.receive_bids(d, 20, 80)
+    c.mine(5)
+    contract.receive_bids(e, 100, 200)
+
+    c.mine(100)
+
 if __name__ == "__main__":
-    case_1()
+    # case_1()
+    case_2()

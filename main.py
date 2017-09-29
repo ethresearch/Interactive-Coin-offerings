@@ -272,8 +272,7 @@ def case_big_whale():
     print("This case shows that a rich whale can't 'pushout' bids to lower the valuation.")
 
 
-def case_last_minute_withdrawls():
-    # Last minute withdrawls
+def case_whale_withdrawls():
     c = Chain()
     a = Player("Alice", 100)
     b = Player("Bobbb", 200)
@@ -297,4 +296,4 @@ if __name__ == "__main__":
     # case_1()
     # case_2()
     # case_big_whale()
-    case_last_minute_withdrawls()
+    case_whale_withdrawls()

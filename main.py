@@ -96,6 +96,7 @@ class ICOContract(EthAccount):
     def final_stage(self):
         for k, address in self.addresses.items():
             print(address)
+        print(self)
 
     def receive_bids(self, player, eth, personal_cap):
         # 1. Any “inactive” address A may send to the crowdfund smart
@@ -151,6 +152,7 @@ class ICOContract(EthAccount):
                     self.transfer(address.player, refund)
                     address.balance *= (1 - q)
                     address.v *= (1 - q)
+            print(self)
 
     def called_by_oracle(self, block_number):
         if self.s < self.u:
@@ -164,7 +166,7 @@ class ICOContract(EthAccount):
         self.s = block_number - self.deployed_at
 
     def __repr__(self):
-        return f"⏲️ {self.s}\tV: {self.crowdsale_valuation}\tp: {self.inflation_ramp}"
+        return f"⏲️ {self.s}\tV: {self.crowdsale_valuation} ETH\tp: {self.inflation_ramp:.2f} Token/ETH"
 
 
 class Chain:
@@ -222,6 +224,27 @@ def case_2():
 
     c.mine(100)
 
+def case_big_whale():
+    # page 11
+    c = Chain()
+    a = Player("Alice", 100)
+    b = Player("Bob", 200)
+    d = Player("David", 200)
+    contract = ICOContract(50, 100, c.block_number)
+    contract.register(a)
+    contract.register(b)
+    contract.register(d)
+    c.contract = contract
+    c.mine(10)
+    contract.receive_bids(a, 30, 79)
+    c.mine(20)
+    contract.receive_bids(b, 30, 79)
+    c.mine(5)
+    contract.receive_bids(d, 50, 200)
+
+    c.mine(100)
+
 if __name__ == "__main__":
     # case_1()
-    case_2()
+    # case_2()
+    case_big_whale()

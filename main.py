@@ -117,6 +117,8 @@ class ICOContract(EthAccount):
         self.addresses[address_name].balance = eth * self.inflation_ramp
         self.addresses[address_name].status = "active"
 
+        print(self)
+
     def voluntary_withdrawal(self, address_name):
         # The following only applies prior to the withdrawal lock at time t.
         # Any “active” address A may signal that it wishes to cancel its
@@ -224,25 +226,28 @@ def case_2():
 
     c.mine(100)
 
+
 def case_big_whale():
-    # page 11
+    # page 11  Monotone valuation invariant
     c = Chain()
     a = Player("Alice", 100)
     b = Player("Bob", 200)
-    d = Player("David", 200)
+    w = Player("Whale 🐳", 200)
     contract = ICOContract(50, 100, c.block_number)
     contract.register(a)
     contract.register(b)
-    contract.register(d)
+    contract.register(w)
     c.contract = contract
     c.mine(10)
     contract.receive_bids(a, 30, 79)
     c.mine(20)
     contract.receive_bids(b, 30, 79)
     c.mine(5)
-    contract.receive_bids(d, 50, 200)
+    contract.receive_bids(w, 50, 200)
 
     c.mine(100)
+    print("This case shows that a rich whale can't 'pushout' bids to lower the valuation.")
+
 
 if __name__ == "__main__":
     # case_1()

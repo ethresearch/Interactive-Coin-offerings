@@ -150,7 +150,7 @@ class ICOContract(EthAccount):
         # smart contract does the following:
         # 1. refunds v(A) native tokens back to A, and
         # 2. sets A’s status to “used.”
-        assert self.s <= self.u
+        assert self.s <= self.t
 
         ico_address_data = self.addresses[account.address]
         ico_address_data.balance = 0

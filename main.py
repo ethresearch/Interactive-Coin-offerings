@@ -33,7 +33,8 @@ class Player:
         self.account_index += 1
 
     def __repr__(self):
-        accounts_info = '\n\t'.join([repr(account) for account in self.accounts])
+        accounts_info = '\n\t'.join([repr(account)
+                                     for account in self.accounts])
         return f"😁 {self.name}\n\t{accounts_info}"
 
 
@@ -68,9 +69,9 @@ class ICOContract(EthAccount):
     def __init__(self, t, u, block_number):
         super().__init__("Contract")
         self.deployed_at = block_number
-        self.t = t + block_number  # withdrawal lock
-        self.u = u + block_number
-        self.s = 0 + block_number
+        self.t = t  # withdrawal lock
+        self.u = u
+        self.s = 0
         self.addresses = {}
 
     def register(self, account):
@@ -183,7 +184,7 @@ class ICOContract(EthAccount):
                     a.v *= (1 - q)
             print(self)
 
-    def called_by_oracle(self, block_number):
+    def called_by_oracle(self):
         if self.s < self.u:
             self.automatic_withdrawal()
         elif self.s == self.t:
@@ -192,7 +193,7 @@ class ICOContract(EthAccount):
             print("\n!!!! u passed: token sales ended\n")
             self.final_stage()
 
-        self.s = block_number - self.deployed_at
+        self.s += 1
 
     def __repr__(self):
         return f"⏲️ {self.s}\tV: {self.crowdsale_valuation:.2f} ETH\tp: {self.inflation_ramp:.2f} TKN/ETH"
@@ -204,7 +205,7 @@ class Chain:
         self.contract = None
 
     def mine_a_block(self):
-        self.contract.called_by_oracle(self.block_number)
+        self.contract.called_by_oracle()
         self.block_number += 1
 
     def mine(self, blocks):
